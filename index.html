@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeleGuard Anti-Scam</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #040e1a;
+      --surface: #06111f;
+      --border: #0d2a45;
+      --accent: #29d4ff;
+      --accent2: #0f6fff;
+      --text: #c8eeff;
+      --muted: #6a8aab;
+      --danger: #ff3b3b;
+      --warn: #ff9900;
+      --safe: #00c896;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+    ::placeholder { color: #2a5070; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* HEADER */
+    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; }
+    .header-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0f6fff22, #29d4ff33); border: 1px solid #29d4ff44; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .logo-name { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: #fff; }
+    .logo-tag { font-size: 10px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
+    .status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--safe); animation: pulse 2s infinite; }
+
+    /* TABS */
+    .tabs { display: flex; overflow-x: auto; }
+    .tab { background: transparent; color: var(--muted); border: none; border-bottom: 2px solid transparent; padding: 12px 18px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; white-space: nowrap; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+    .tab.active { background: #0f1f35; color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* CONTENT */
+    .content { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+    .section { display: none; animation: fadeUp 0.3s ease; }
+    .section.active { display: block; }
+
+    /* TYPOGRAPHY */
+    .title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+
+    /* INPUTS */
+    .input, .select, .textarea {
+      background: #071828; border: 1px solid #1a3a5c; border-radius: 8px;
+      color: var(--text); padding: 11px 16px; font-family: 'DM Mono', monospace;
+      font-size: 13px; outline: none; width: 100%; transition: border 0.2s;
+    }
+    .input:focus, .select:focus, .textarea:focus { border-color: var(--accent); }
+    .textarea { min-height: 100px; resize: vertical; }
+    .label { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 6px; margin-top: 14px; }
+
+    /* BUTTONS */
+    .btn { background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #000; border: none; border-radius: 8px; padding: 12px 24px; font-family: 'DM Mono', monospace; font-weight: 700; font-size: 13px; cursor: pointer; letter-spacing: 0.5px; transition: opacity 0.2s; width: 100%; margin-top: 16px; }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ROW */
+    .row { display: flex; gap: 10px; }
+    .row .input { flex: 1; }
+    .row .btn { width: auto; margin-top: 0; white-space: nowrap; }
+
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 20px; }
+    .card.danger { background: #1a050555; border-color: #ff3b3b44; }
+    .card.safe { background: #00200f55; border-color: #00c89644; }
+
+    /* BADGE */
+    .badge { display: inline-block; border-radius: 4px; padding: 2px 10px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .badge.HIGH { background: #ff3b3b22; color: var(--danger); border: 1px solid #ff3b3b55; }
+    .badge.MEDIUM { background: #ff990022; color: var(--warn); border: 1px solid #ff990055; }
+    .badge.LOW { background: #00c89622; color: var(--safe); border: 1px solid #00c89655; }
+
+    /* RESULT */
+    .result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .result-emoji { font-size: 28px; }
+    .result-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+    .result-title.danger { color: var(--danger); }
+    .result-title.safe { color: var(--safe); }
+    .result-sub { font-size: 12px; color: var(--muted); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .info-box { background: #00000033; border-radius: 8px; padding: 10px 14px; }
+    .info-label { font-size: 10px; color: var(--muted); margin-bottom: 3px; letter-spacing: 1px; text-transform: uppercase; }
+    .info-val { font-size: 13px; color: #fff; }
+    .scam-msg { background: #00000033; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+    .scam-msg-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; text-transform: uppercase; }
+    .scam-msg-text { font-size: 13px; color: #ffb070; font-style: italic; }
+    .alert { font-size: 12px; border-radius: 8px; padding: 10px 14px; }
+    .alert.danger { color: #ff9090; background: #ff000011; border: 1px solid #ff300022; }
+    .alert.safe { color: #70d8a8; background: #00200f55; border: 1px solid #00c89633; }
+
+    /* RISK METER */
+    .meter-bar { background: #040e1a; border-radius: 6px; height: 10px; margin: 10px 0 6px; overflow: hidden; }
+    .meter-fill { height: 100%; border-radius: 6px; transition: width 1s ease; }
+    .meter-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+
+    /* FLAGS */
+    .flag-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 13px; }
+    .flag-icon { color: var(--danger); }
+
+    /* DB TABLE */
+    .table { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-top: 16px; }
+    .table-header { display: grid; grid-template-columns: 1.4fr 1fr 70px 70px; background: var(--surface); padding: 10px 14px; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+    .table-row { display: grid; grid-template-columns: 1.4fr 1fr 70px 70px; padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #0d2a4577; transition: background 0.15s; }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: #071828; }
+    .table-username { color: var(--accent); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .table-type { color: var(--text); }
+    .table-reports { color: var(--muted); }
+
+    /* NOTIFICATION */
+    .notif { position: fixed; top: 20px; right: 16px; z-index: 999; background: #0a2540; border: 1px solid #29d4ff44; border-left: 4px solid var(--accent); color: var(--text); padding: 14px 18px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 32px #000a; animation: slideIn 0.3s ease; max-width: 280px; display: none; }
+
+    /* LOADING */
+    .loading { text-align: center; color: var(--accent); padding: 32px; font-size: 13px; animation: pulse 1s infinite; }
+
+    /* FOOTER */
+    .footer { text-align: center; padding: 24px 0 32px; color: #1a3a5c; font-size: 10px; letter-spacing: 1px; }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon">🛡️</div>
+      <div>
+        <div class="logo-name">TeleGuard</div>
+        <div class="logo-tag">Anti-Scam Intelligence</div>
+      </div>
+    </div>
+    <div class="status">
+      <span class="dot"></span>
+      <span id="db-count">5</span> entries
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('check')">🔍 Check User</button>
+    <button class="tab" onclick="showTab('report')">🚨 Report</button>
+    <button class="tab" onclick="showTab('analyze')">🤖 AI Analyze</button>
+    <button class="tab" onclick="showTab('db')">🗄️ Database</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- CHECK TAB -->
+  <div class="section active" id="tab-check">
+    <div class="title">Check a Telegram User</div>
+    <div class="subtitle">Enter a username to check against our scammer database.</div>
+    <div class="row">
+      <input class="input" id="check-input" placeholder="@username" onkeydown="if(event.key==='Enter') checkUser()" />
+      <button class="btn" onclick="checkUser()" style="margin-top:0">Check</button>
+    </div>
+    <div id="check-result"></div>
+  </div>
+
+  <!-- REPORT TAB -->
+  <div class="section" id="tab-report">
+    <div class="title">Report a Scammer</div>
+    <div class="subtitle">Help protect the community by reporting scammers.</div>
+    <label class="label">Scammer Username *</label>
+    <input class="input" id="r-username" placeholder="@username" />
+    <label class="label">Scam Type *</label>
+    <select class="select" id="r-type">
+      <option>Crypto Scam</option>
+      <option>Job Scam</option>
+      <option>Lottery Scam</option>
+      <option>Impersonation</option>
+      <option>NFT Scam</option>
+      <option>Romance Scam</option>
+      <option>Phishing</option>
+      <option>Investment Fraud</option>
+      <option>Other</option>
+    </select>
+    <label class="label">Scam Message They Sent *</label>
+    <textarea class="textarea" id="r-message" placeholder="Paste the message the scammer sent you..."></textarea>
+    <label class="label">Additional Notes</label>
+    <input class="input" id="r-note" placeholder="Any other details..." />
+    <button class="btn" onclick="submitReport()">🚨 Submit Report</button>
+  </div>
+
+  <!-- ANALYZE TAB -->
+  <div class="section" id="tab-analyze">
+    <div class="title">AI Message Analyzer</div>
+    <div class="subtitle">Paste a suspicious message and let AI detect scam patterns.</div>
+    <textarea class="textarea" id="analyze-input" placeholder="Paste the suspicious message here..." style="min-height:120px"></textarea>
+    <button class="btn" onclick="analyzeMessage()">🤖 Analyze with AI</button>
+    <div id="analyze-result"></div>
+  </div>
+
+  <!-- DATABASE TAB -->
+  <div class="section" id="tab-db">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <div class="title">Scammer Database</div>
+        <div class="subtitle" id="db-subtitle">5 known scammers</div>
+      </div>
+      <input class="input" id="db-search" placeholder="Search…" style="width:180px" oninput="renderDB()" />
+    </div>
+    <div class="table">
+      <div class="table-header">
+        <span>Username</span><span>Type</span><span>Reports</span><span>Risk</span>
+      </div>
+      <div id="db-rows"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">TELEGUARD • ANTI-SCAM INTELLIGENCE • PROTECT THE COMMUNITY</div>
+
+<script>
+  // ── DATA ──────────────────────────────────────────────
+  const SCAMMER_DB = [
+    { username: "@crypto_profit_99", type: "Crypto Scam", reports: 47, risk: "HIGH", date: "2026-04-10", message: "Send 0.1 BTC to get 1 BTC back guaranteed!" },
+    { username: "@job_offer_official", type: "Job Scam", reports: 31, risk: "HIGH", date: "2026-04-15", message: "Work from home $500/day, no experience needed!" },
+    { username: "@nft_drop_free", type: "NFT Scam", reports: 23, risk: "MEDIUM", date: "2026-04-20", message: "Claim your free NFT worth $10,000 now!" },
+    { username: "@telegram_support_help", type: "Impersonation", reports: 58, risk: "HIGH", date: "2026-03-28", message: "Your account is at risk, verify now." },
+    { username: "@lucky_winner_2026", type: "Lottery Scam", reports: 19, risk: "MEDIUM", date: "2026-05-01", message: "You've won $50,000! Send $50 processing fee." },
+  ];
+
+  const SCAM_PATTERNS = [
+    { pattern: /free.*bitcoin|bitcoin.*free/i, label: "Crypto Giveaway Scam", severity: "HIGH" },
+    { pattern: /send.*btc|send.*eth|send.*usdt/i, label: "Crypto Transfer Scam", severity: "HIGH" },
+    { pattern: /guaranteed.*profit|profit.*guaranteed/i, label: "Investment Fraud", severity: "HIGH" },
+    { pattern: /click.*link|link.*click/i, label: "Phishing Link", severity: "MEDIUM" },
+    { pattern: /won.*prize|prize.*won|lottery/i, label: "Lottery Scam", severity: "HIGH" },
+    { pattern: /work from home.*\$|earn.*day.*no experience/i, label: "Job Scam", severity: "MEDIUM" },
+    { pattern: /verify.*account|account.*verify/i, label: "Account Takeover", severity: "HIGH" },
+    { pattern: /limited.*offer|offer.*limited.*time/i, label: "Urgency Manipulation", severity: "LOW" },
+    { pattern: /admin|support.*telegram|telegram.*official/i, label: "Impersonation", severity: "HIGH" },
+    { pattern: /nft.*free|free.*nft|airdrop/i, label: "NFT/Airdrop Scam", severity: "MEDIUM" },
+  ];
+
+  // ── TABS ──────────────────────────────────────────────
+  function showTab(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+    if (name === 'db') renderDB();
+  }
+
+  // ── NOTIFICATION ──────────────────────────────────────
+  function showNotif(msg) {
+    const n = document.getElementById('notif');
+    n.textContent = msg;
+    n.style.display = 'block';
+    setTimeout(() => { n.style.display = 'none'; }, 3000);
+  }
+
+  // ── CHECK USER ────────────────────────────────────────
+  function checkUser() {
+    const input = document.getElementById('check-input').value.trim();
+    if (!input) return;
+    const query = input.toLowerCase().replace(/^@/, '');
+    const found = SCAMMER_DB.find(s => s.username.toLowerCase().replace(/^@/, '') === query);
+    const el = document.getElementById('check-result');
+    if (found) {
+      el.innerHTML = `
+        <div class="card danger" style="animation:fadeUp 0.3s ease">
+          <div class="result-header">
+            <span class="result-emoji">⚠️</span>
+            <div>
+              <div class="result-title danger">SCAMMER DETECTED</div>
+              <div class="result-sub">${found.username}</div>
+            </div>
+            <div style="margin-left:auto"><span class="badge ${found.risk}">${found.risk}</span></div>
+          </div>
+          <div class="grid2">
+            <div class="info-box"><div class="info-label">Scam Type</div><div class="info-val">${found.type}</div></div>
+            <div class="info-box"><div class="info-label">Reports</div><div class="info-val">${found.reports} users</div></div>
+            <div class="info-box"><div class="info-label">First Seen</div><div class="info-val">${found.date}</div></div>
+            <div class="info-box"><div class="info-label">Risk Level</div><div class="info-val">${found.risk}</div></div>
+          </div>
+          <div class="scam-msg">
+            <div class="scam-msg-label">Known Scam Message</div>
+            <div class="scam-msg-text">"${found.message}"</div>
+          </div>
+          <div class="alert danger">🚫 <strong>Do not</strong> engage, click links, or send money. Block and report immediately.</div>
+        </div>`;
+    } else {
+      el.innerHTML = `
+        <div class="card safe" style="animation:fadeUp 0.3s ease">
+          <div class="result-header">
+            <span class="result-emoji">✅</span>
+            <div>
+              <div class="result-title safe">Not in Database</div>
+              <div class="result-sub">${input}</div>
+            </div>
+          </div>
+          <div class="alert safe">This user isn't in our database. Stay cautious — use the <strong>AI Analyzer</strong> to check suspicious messages.</div>
+        </div>`;
+    }
+  }
+
+  // ── REPORT ────────────────────────────────────────────
+  function submitReport() {
+    const username = document.getElementById('r-username').value.trim();
+    const type = document.getElementById('r-type').value;
+    const message = document.getElementById('r-message').value.trim();
+    if (!username || !message) { showNotif('⚠️ Please fill in all required fields!'); return; }
+    const entry = {
+      username: username.startsWith('@') ? username : '@' + username,
+      type, reports: 1, risk: 'HIGH',
+      date: new Date().toISOString().split('T')[0],
+      message
+    };
+    SCAMMER_DB.unshift(entry);
+    document.getElementById('db-count').textContent = SCAMMER_DB.length;
+    document.getElementById('r-username').value = '';
+    document.getElementById('r-message').value = '';
+    document.getElementById('r-note').value = '';
+    showNotif('✅ Scammer reported and added to the database!');
+  }
+
+  // ── AI ANALYZE ────────────────────────────────────────
+  async function analyzeMessage() {
+    const msg = document.getElementById('analyze-input').value.trim();
+    if (!msg) return;
+    const el = document.getElementById('analyze-result');
+    el.innerHTML = '<div class="loading">🤖 AI is analyzing the message…</div>';
+
+    const localMatches = SCAM_PATTERNS.filter(p => p.pattern.test(msg));
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: `You are an expert scam detection AI for Telegram messages. Return ONLY valid JSON (no markdown) with: {"riskScore":0-100,"riskLevel":"LOW"|"MEDIUM"|"HIGH","scamType":"string or null","indicators":["array"],"verdict":"string","advice":"string"}`,
+          messages: [{ role: 'user', content: `Analyze this Telegram message for scams:\n\n"${msg}"` }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content.map(i => i.text || '').join('');
+      const result = JSON.parse(text.replace(/```json|```/g, '').trim());
+      renderAnalysis(result, localMatches);
+    } catch(e) {
+      const score = localMatches.length === 0 ? 10 : localMatches.some(m => m.severity === 'HIGH') ? 85 : 50;
+      renderAnalysis({
+        riskScore: score,
+        riskLevel: score > 70 ? 'HIGH' : score > 40 ? 'MEDIUM' : 'LOW',
+        scamType: localMatches[0]?.label || null,
+        indicators: localMatches.map(m => m.label),
+        verdict: score > 70 ? 'This message shows strong scam indicators.' : 'This message appears relatively safe.',
+        advice: score > 40 ? 'Do not click links or send money. Block and report.' : 'Stay cautious. Never share personal info.',
+      }, localMatches);
+    }
+  }
+
+  function getRiskColor(level) {
+    return level === 'HIGH' ? '#ff3b3b' : level === 'MEDIUM' ? '#ff9900' : '#00c896';
+  }
+
+  function renderAnalysis(r, localMatches) {
+    const color = getRiskColor(r.riskLevel);
+    const el = document.getElementById('analyze-result');
+    el.innerHTML = `
+      <div style="animation:fadeUp 0.3s ease">
+        <div class="card" style="border-color:${color}44;margin-top:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <strong>Risk Assessment</strong>
+            <span class="badge ${r.riskLevel}">${r.riskLevel}</span>
+          </div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${r.riskScore}%;background:linear-gradient(90deg,#0f6fff,${color})"></div></div>
+          <div class="meter-labels"><span>Safe</span><span style="color:${color};font-weight:700">${r.riskScore}/100</span><span>Dangerous</span></div>
+        </div>
+        ${r.scamType ? `<div class="card" style="margin-top:10px"><span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Scam Type: </span><span style="color:#ff9900;font-weight:600">${r.scamType}</span></div>` : ''}
+        <div class="card" style="margin-top:10px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Red Flags</div>
+          ${r.indicators && r.indicators.length > 0
+            ? r.indicators.map(f => `<div class="flag-item"><span class="flag-icon">⚑</span>${f}</div>`).join('')
+            : '<div style="color:var(--safe);font-size:13px">No major red flags detected.</div>'
+          }
+        </div>
+        <div class="card" style="margin-top:10px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Verdict</div>
+          <div style="font-size:13px">${r.verdict}</div>
+        </div>
+        <div class="alert ${r.riskLevel === 'HIGH' ? 'danger' : 'safe'}" style="margin-top:10px;border-radius:10px;padding:14px 16px">
+          💡 <strong>Advice:</strong> ${r.advice}
+        </div>
+      </div>`;
+  }
+
+  // ── DATABASE ──────────────────────────────────────────
+  function renderDB() {
+    const q = (document.getElementById('db-search')?.value || '').toLowerCase();
+    const filtered = SCAMMER_DB.filter(s =>
+      s.username.toLowerCase().includes(q) || s.type.toLowerCase().includes(q)
+    );
+    document.getElementById('db-subtitle').textContent = filtered.length + ' known scammers';
+    document.getElementById('db-rows').innerHTML = filtered.length === 0
+      ? '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">No results found.</div>'
+      : filtered.map(s => `
+          <div class="table-row">
+            <span class="table-username">${s.username}</span>
+            <span class="table-type">${s.type}</span>
+            <span class="table-reports">${s.reports}</span>
+            <span><span class="badge ${s.risk}">${s.risk}</span></span>
+          </div>`).join('');
+  }
+
+  // ── INIT ──────────────────────────────────────────────
+  renderDB();
+  document.getElementById('db-count').textContent = SCAMMER_DB.length;
+
+  // Telegram WebApp init
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  }
+</script>
+</body>
+</html>
